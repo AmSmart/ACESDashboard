@@ -1,6 +1,6 @@
 using System;
 
-namespace ACESDashboard.Models
+namespace ACESDashboard.ViewModels
 {
     public class ErrorViewModel
     {
