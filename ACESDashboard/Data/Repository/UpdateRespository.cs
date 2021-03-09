@@ -21,7 +21,7 @@ namespace ACESDashboard.Data.Repository
             => await DbContext.Updates.Where(x => x.Workspace.Id == workspaceId)
             .ToListAsync();
 
-        public async Task<Update> GetByIdAsync(int id)
+        public async Task<Update> GetByIdAsync(int id) 
             => await DbContext.Updates.FindAsync(id);
 
         public async Task<Update> DeleteAsync(Update update)

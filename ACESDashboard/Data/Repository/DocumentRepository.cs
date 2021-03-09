@@ -16,27 +16,27 @@ namespace ACESDashboard.Data.Repository
 
         public ApplicationDbContext DbContext { get; }
 
-        public async Task<Document> Create(Document document)
+        public async Task<Document> CreateAsync(Document document)
         {
             DbContext.Documents.Add(document);
             await DbContext.SaveChangesAsync();
             return document;
         }
 
-        public async Task<Document> Delete(Document document)
+        public async Task<Document> DeleteAsync(Document document)
         {
             DbContext.Documents.Remove(document);
             await DbContext.SaveChangesAsync();
             return document;
         }
 
-        public async Task<Document> GetById(int id)
+        public async Task<Document> GetByIdAsync(int id)
             => await DbContext.Documents.FindAsync(id);
 
-        public async Task<string> GetFilePath(int id)
-            => (await DbContext.Documents.FindAsync(id)).DocumentFilePath;
+        public async Task<string> GetFileNameAsync(int id)
+            => (await DbContext.Documents.FindAsync(id)).DocumentFileName;
 
-        public async Task<Document> Update(Document document)
+        public async Task<Document> UpdateAsync(Document document)
         {
             DbContext.Documents.Update(document);
             await DbContext.SaveChangesAsync();

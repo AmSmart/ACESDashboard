@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,9 @@ namespace ACESDashboard.Services
 {
     public interface IStorageService
     {
-        
+        void DeleteFile(string filePath);
+        void DeleteFiles(string[] filePaths);
+        Task<string> SaveFile(IFormFile file);
+        Task<List<string>> SaveFiles(IFormFile[] files);
     }
 }

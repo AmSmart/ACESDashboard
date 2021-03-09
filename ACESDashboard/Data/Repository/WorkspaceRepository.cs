@@ -17,7 +17,7 @@ namespace ACESDashboard.Data.Repository
 
         public ApplicationDbContext DbContext { get; }
 
-        public async Task<List<Workspace>> GetAllAsync()
+        public async Task<List<Workspace>> GetAllAsync() 
             => await DbContext.Workspaces.ToListAsync();
 
         public async Task<Workspace> CreateAsync(Workspace workspace)
