@@ -1,7 +1,165 @@
 ﻿@model EditWorkspaceVM
 
-@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
 @{
+    ViewData["Title"] = "Workspace";
+    string updatesText = Model.ActiveUpdatesOnly ? "(View All Updates)" : "(View Active Updates)";
+}
+
+<div class="text-center">
+    <div class="text-left">
+        <a asp-action="Workspace" asp-route-id="@Model.Id" asp-route-activeOnly="@Model.ActiveUpdatesOnly">Go Back</a>
+    </div>
+    <h3>Important Updates</h3>
+    <a asp-action="EditWorkspace" asp-route-id="@Model.Id" asp-route-activeOnly="@(!Model.ActiveUpdatesOnly)"><p>@updatesText</p></a>
+    <ul>
+        @for (int i = 0; i < @Model.Updates.Count; i++)
+        {
+            <li class="mb-1">
+                <span>
+                    @($"{Model.Updates[i].Text} - Posted at {Model.Updates[i].TimePosted:F}")
+                    <button class="btn btn-primary up-edit" data-item-id="@Model.Updates[i].Id" data-item-text="@Model.Updates[i].Text" data-item-expiry-time="@(Model.Updates[i].ExpiresAt.ToString("o"))" data-item-posted-time="@(Model.Updates[i].TimePosted.ToString("o"))">Edit</button>
+                    <button class="btn btn-danger up-delete" data-item-id="@Model.Updates[i].Id" data-item-text="@Model.Updates[i].Text">Delete</button>
+                </span>
+            </li>
+        }
+    </ul>
+
+    @for (int i = 0; i < Model.Sections.Count; i++)
+    {
+        string id = $"collapse{i}";
+        string hashId = $"#collapse{i}";
+
+        <div id="accordion">
+            <div class="card">
+                <div class="card-header" id="headingOne">
+                    <h5 class="mb-0">
+                        <span>
+                            <button class="btn btn-link" data-toggle="collapse" data-target="@hashId" aria-expanded="true" aria-controls="collapseOne">
+                                @Model.Sections[i].Name
+                            </button>
+                            <button class="btn btn-danger sec-delete" data-item-id="@Model.Sections[i].Id" data-item-name="@Model.Sections[i].Name">
+                                Delete
+                            </button>
+                        </span>
+                    </h5>
+                </div>
+
+                <div id="@id" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+                    <div class="card-body">
+                        @for (int j = 0; j < Model.Sections[i].Documents.Count; j++)
+                        {
+                            <div class="mb-1">
+                                <span>
+                                    <a asp-action="DownloadDocument" asp-route-fileName="@Model.Sections[i].Documents[j].FileName" asp-route-name="@Model.Sections[i].Documents[j].Name" asp-route-fileExtension="@Model.Sections[i].Documents[j].FileExtension" asp-route-contentType="@Model.Sections[i].Documents[j].FileContentType">
+                                        @Model.Sections[i].Documents[j].Name
+                                    </a>
+                                    <button class="btn btn-danger doc-delete" data-item-id="@Model.Sections[i].Documents[j].Id" data-item-name="@Model.Sections[i].Documents[j].Name">Delete</button>
+                                    @*<a asp-page="Preview" asp-route-FilePath="@filePath">@fileName</a>*@
+                                    <br />
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="deleteUpModal" tabindex="-1" role="dialog" aria-labelledby="deleteUpModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUpModalLabel">Update Delete Confirmation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this update?</p>
+                <code id="upDeleteQuote"></code>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmUpDelete" type="submit" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteDocModal" tabindex="-1" role="dialog" aria-labelledby="deleteDocModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteDocModalLabel">Document Delete Confirmation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this document?</p>
+                <code id="docDeleteQuote"></code>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmDocDelete" type="submit" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteSecModal" tabindex="-1" role="dialog" aria-labelledby="deleteSecModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSecModalLabel">Section Delete Confirmation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this entire section and all documents in it?</p>
+                <code id="secDeleteQuote"></code>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmSecDelete" type="submit" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editUpModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Edit Update</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to edit this update?</p>
+                <form>
+                    <div class="form-group">
+                        <label for="updateText">New Text</label>
+                        <textarea class="form-control" id="updateText" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="expiryTime">Expires At</label>
+                        <input class="form-control" type="datetime-local" id="expiryTime" />
+                        <input hidden class="form-control" type="datetime-local" id="postedTime" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmUpEdit" type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="~/js/EditWorkspace.js"></script>
 }

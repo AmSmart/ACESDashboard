@@ -69,8 +69,10 @@ namespace ACESDashboard
 
             services.AddDatabaseDeveloperPageExceptionFilter();
 
-            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<ApplicationDbContext>();
+            services.AddDefaultIdentity<ApplicationUser>(options =>
+            {
+                //options.SignIn.RequireConfirmedAccount = true;
+            }).AddEntityFrameworkStores<ApplicationDbContext>();
 
             services.AddControllersWithViews();
 
@@ -83,3 +85,9 @@ namespace ACESDashboard
         }
     }
 }
+
+// TODO: Custom Error managemnet with toasts
+// TODO: Replace alert dialogs with toasts
+// TODO: Implement authorisation for each action in the conroller
+// TODO: Implement Admin Management
+// TODO: Beautify

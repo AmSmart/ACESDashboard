@@ -10,5 +10,6 @@ namespace ACESDashboard.Data.Repository
         Task<Update> DeleteAsync(Update update);
         Task<List<Update>> GetAllForWorkspaceAsync(int workspaceId);
         Task<Update> GetByIdAsync(int id);
+        Task<Update> UpdateAsync(Update update);
     }
 }

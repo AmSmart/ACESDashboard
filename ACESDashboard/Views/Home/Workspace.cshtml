@@ -1,7 +1,158 @@
 ﻿@model WorkspaceViewModel
 
-@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
 @{
+    ViewData["Title"] = "Workspace";
+    string updatesText = Model.ActiveUpdatesOnly ? "(View All Updates)" : "(View Active Updates)";
+}
+
+<div class="text-center">
+    @if (User.FindFirst(Constants.SuperAdminClaim) is not null
+    || User.FindAll(Constants.AdminClaim).Where(x => x.Value == Model.Guid.ToString()).Count() > 0)
+    {
+        <div class="text-center">
+            <button id="btnAddDoc" class="btn btn-primary">Add Document</button>
+            <button id="btnAddSec" class="btn btn-primary">Add Section</button>
+            <button id="btnAddUp" class="btn btn-primary">Add Update</button>
+            <a class="btn btn-primary" asp-action="EditWorkspace" asp-route-activeOnly="@Model.ActiveUpdatesOnly" asp-route-id="@Model.Id">Edit Workspace</a>
+        </div>
+    }
+
+    <h3>Important Updates</h3>
+    <a asp-action="Workspace" asp-route-id="@Model.Id" asp-route-activeOnly="@(!Model.ActiveUpdatesOnly)"><p>@updatesText</p></a>
+    <ul>
+        @for (int i = 0; i < @Model.Updates.Count; i++)
+        {
+            <li>@($"{Model.Updates[i].Text} - Posted at {Model.Updates[i].TimePosted:R}")</li>
+        }
+    </ul>
+
+    @for (int i = 0; i < Model.Sections.Count; i++)
+    {
+        string id = $"collapse{i}";
+        string hashId = $"#collapse{i}";
+
+        <div id="accordion">
+            <div class="card">
+                <div class="card-header" id="headingOne">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link" data-toggle="collapse" data-target="@hashId" aria-expanded="true" aria-controls="collapseOne">
+                            @Model.Sections[i].Name
+                        </button>
+                    </h5>
+                </div>
+
+                <div id="@id" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+                    <div class="card-body">
+                        @for (int j = 0; j < Model.Sections[i].Documents.Count; j++)
+                        {
+                            <a asp-action="DownloadDocument" asp-route-fileName="@Model.Sections[i].Documents[j].FileName" asp-route-name="@Model.Sections[i].Documents[j].Name" asp-route-fileExtension="@Model.Sections[i].Documents[j].FileExtension" asp-route-contentType="@Model.Sections[i].Documents[j].FileContentType">
+                                @Model.Sections[i].Documents[j].Name
+                            </a>
+                            @*<a asp-page="Preview" asp-route-FilePath="@filePath">@fileName</a>*@
+                            <br />
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<input hidden class="form-control" type="number" value="@Model.Id" id="workspaceId" />
+
+<div class="modal fade" id="addDocModal" tabindex="-1" role="dialog" aria-labelledby="addDocModalLabel" aria-hidden="true">
+    <form method="post" asp-action="AddDocument" enctype="multipart/form-data">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addDocModalLabel">Add New Document</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input hidden type="number" name="workspaceId" value="@Model.Id" />
+                    <div class="form-group">
+                        <label class="form-label" for="sectionName">Section</label>
+                        <select class="form-control" name="sectionName" id="sectionName">
+                            @for(int i = 0; i < @Model.Sections.Count; i++)
+                            {
+                                <option>@Model.Sections[i].Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="documentName">Document Name</label>
+                        <input type="text" class="form-control" name="fileName" id="fileName" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="documentFile">Choose File</label>
+                        <input type="file" class="form-control" name="file" id="file" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button id="confirmDocAdd" type="submit" class="btn btn-primary">Add Document</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="addUpModal" tabindex="-1" role="dialog" aria-labelledby="addUpModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUpModalLabel">Add Update</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label class="form-label" for="updateText">Text</label>
+                        <textarea class="form-control" id="updateText" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="expiryTime">Expires At</label>
+                        <input class="form-control" type="datetime-local" id="expiryTime" />                        
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmUpAdd" type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addSecModal" tabindex="-1" role="dialog" aria-labelledby="addSecModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSecModalLabel">Add New Section</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label class="form-label" for="newSectionName">New Section Name</label>
+                        <input type="text" class="form-control" id="newSectionName"/>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmSecAdd" type="submit" class="btn btn-primary">Add Section</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="~/js/Workspace.js"></script>
 }

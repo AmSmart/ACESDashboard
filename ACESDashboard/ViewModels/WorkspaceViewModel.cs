@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ACESDashboard.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,20 @@ namespace ACESDashboard.ViewModels
 {
     public class WorkspaceViewModel
     {
+        public int Id { get; set; }
+
+        public Guid Guid { get; set; }
+
+        public string Name { get; set; }
+
+        public string Tag { get; set; }
+
+        public bool Archived { get; set; }
+
+        public List<Section> Sections { get; set; }
+
+        public List<Update> Updates { get; set; }
         
+        public bool ActiveUpdatesOnly { get; set; }
     }
 }

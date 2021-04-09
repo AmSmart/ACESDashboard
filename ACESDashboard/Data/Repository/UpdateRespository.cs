@@ -37,5 +37,12 @@ namespace ACESDashboard.Data.Repository
             await DbContext.SaveChangesAsync();
             return update;
         }
+
+        public async Task<Update> UpdateAsync(Update update)
+        {
+            DbContext.Updates.Update(update);
+            await DbContext.SaveChangesAsync();
+            return update;
+        }
     }
 }

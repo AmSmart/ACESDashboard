@@ -23,25 +23,14 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>                        
-                        @if(SignInManager.IsSignedIn(User))
-                        {
+                        @if(SignInManager.IsSignedIn(User))                        
+                        {                            
                             @if(User.FindFirst(Constants.SuperAdminClaim) is not null)
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="ManageWorkspaces">Manage Workspaces</a>
-                                </li>
-
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="EditWorkspace">Edit Workspace</a>
-                                </li>
-                                   
-                            }
-                            else if(User.FindFirst(Constants.AdminClaim) is not null)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="EditWorkspace">Edit Workspace</a>
-                                </li>
-                            }
+                                </li>                                   
+                            }                            
                         }
                     </ul>
                     <partial name="_LoginPartial" />

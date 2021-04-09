@@ -1,6 +1,8 @@
-﻿using ACESDashboard.Models;
+﻿using ACESDashboard.Extensions;
+using ACESDashboard.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ACESDashboard.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -21,7 +23,23 @@ namespace ACESDashboard.Data
         public DbSet<Update> Updates { get; set; }
         public DbSet<Workspace> Workspaces { get; set; }
 
-        public async Task SeedData()
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<Workspace>()
+                .Property(x => x.Guid)
+                .HasValueGenerator<SequentialGuidValueGenerator>();
+
+            builder.Entity<Section>()
+                .HasMany(x => x.Documents)
+                .WithOne(x => x.Section)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.ApplyUtcDateTimeConverter();
+        }
+
+        public async Task SeedDataAsync()
         {
             var workspace = new Workspace
             {
@@ -38,7 +56,7 @@ namespace ACESDashboard.Data
                             new Document
                             {
                                 Name = "Test Document",
-                                DocumentFileName = "test.png",
+                                FileName = "test.png",
                                 TimePosted = DateTime.UtcNow
                             }
                         }
@@ -48,14 +66,11 @@ namespace ACESDashboard.Data
                 {
                     new Update
                     {
-                        UpdateType = UpdateType.Text,
                         Text = "This a new update, take note",
                         TimePosted = DateTime.UtcNow
                     },
                     new Update
                     {
-                        UpdateType = UpdateType.Image,
-                        ImageFileName = "test.png",
                         Text = "Note the image",
                         TimePosted = DateTime.UtcNow
                     }

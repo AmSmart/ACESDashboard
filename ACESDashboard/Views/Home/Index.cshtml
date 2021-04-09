@@ -6,5 +6,67 @@
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h3>ACES Students' Dashboard</h3>
+    <br><br>
+
+    @{
+        string workspacesText = Model.ActiveOnly ? "View All Workspaces" : "View Active Workspaces";
+    }
+
+    @if (User.FindFirst(Constants.SuperAdminClaim) is not null)
+    {
+        <div class="text-right">
+            <button id="btnAddWkspc" class="btn btn-primary" type="button">New Workspace</button>
+            <br>
+        </div>
+    }
+
+    <a asp-action="Index" asp-route-activeOnly="@(!Model.ActiveOnly)">@workspacesText</a>
+
+    @for (int i = 0; i < Model.Workspaces.Count; i++)
+    {
+        <div class="list-group">
+            <a asp-action="Workspace" asp-route-activeOnly="true" asp-route-id="@Model.Workspaces[i].Id" class="list-group-item list-group-item-action flex-column align-items-start" style="background-color: deepskyblue;">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">@Model.Workspaces[i].Name</h5>
+                    <small>@(Model.Workspaces[i].Archived ? "Archived" : "Active")</small>
+                </div>
+                <p class="mb-1">@Model.Workspaces[i].Tag</p>                
+            </a>            
+        </div>
+        <br>
+    }
 </div>
+
+<div class="modal fade" id="addWkspcModal" tabindex="-1" role="dialog" aria-labelledby="addWkspcModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addWkspcModalLabel">Add New Workspace</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label class="form-label" for="newWorkspaceName">Name</label>
+                        <input type="text" class="form-control" id="newWorkspaceName"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="newWorkspaceTag">Tag</label>
+                        <input type="text" class="form-control" id="newWorkspaceTag"/>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmWkspcAdd" type="submit" class="btn btn-primary">Add Workspace</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="~/js/Index.js"></script>
+}

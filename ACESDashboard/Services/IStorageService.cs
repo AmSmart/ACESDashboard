@@ -9,9 +9,10 @@ namespace ACESDashboard.Services
 {
     public interface IStorageService
     {
-        void DeleteFile(string filePath);
-        void DeleteFiles(string[] filePaths);
-        Task<string> SaveFile(IFormFile file);
-        Task<List<string>> SaveFiles(IFormFile[] files);
+        void DeleteFile(string fileName);
+        void DeleteFiles(string[] fileNames);
+        byte[] GetFile(string fileName);
+        Task<string> SaveFile(IFormFile file, string extension);
+        Task<List<string>> SaveFiles(IFormFile[] files, string[] extensions);
     }
 }

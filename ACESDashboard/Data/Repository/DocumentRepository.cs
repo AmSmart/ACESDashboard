@@ -34,7 +34,7 @@ namespace ACESDashboard.Data.Repository
             => await DbContext.Documents.FindAsync(id);
 
         public async Task<string> GetFileNameAsync(int id)
-            => (await DbContext.Documents.FindAsync(id)).DocumentFileName;
+            => (await DbContext.Documents.FindAsync(id)).FileName;
 
         public async Task<Document> UpdateAsync(Document document)
         {

@@ -10,5 +10,7 @@ namespace ACESDashboard.ViewModels
     public class IndexViewModel
     {
         public List<Workspace> Workspaces { get; set; }
+
+        public bool ActiveOnly { get; set; }
     }
 }

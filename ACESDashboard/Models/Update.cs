@@ -10,21 +10,13 @@ namespace ACESDashboard.Models
     {
         public int Id { get; set; }
 
-        public UpdateType UpdateType { get; set; }
-
         public string Text { get; set; }
-
-        public string ImageFileName { get; set; }
 
         public DateTime TimePosted { get; set; }
 
+        public DateTime ExpiresAt { get; set; }
+
         // Reverse Navigation Property
         public virtual Workspace Workspace { get; set; }
-    }
-
-    public enum UpdateType
-    {
-        Text,
-        Image
     }
 }

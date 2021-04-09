@@ -15,7 +15,11 @@ namespace ACESDashboard.Services
         public StorageService(IWebHostEnvironment webHostEnvironment)
         {
             WebHostEnvironment = webHostEnvironment;
-            AssetPath = Path.Combine(WebHostEnvironment.WebRootPath, "Assets");            
+            AssetPath = Path.Combine(WebHostEnvironment.WebRootPath, "Assets");
+
+            if (!Directory.Exists(AssetPath))
+                Directory.CreateDirectory(AssetPath);
+
             PathSeparator = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "\\" : "/";
         }
 
@@ -25,23 +29,25 @@ namespace ACESDashboard.Services
 
         public IWebHostEnvironment WebHostEnvironment { get; }
 
-        public void DeleteFile(string filePath)
+        public void DeleteFile(string fileName)
         {
+            string filePath = Path.Combine(AssetPath, fileName);
             if(VerifyPathValidity(filePath))
                 File.Delete(filePath);
         }
 
-        public void DeleteFiles(string[] filePaths)
+        public void DeleteFiles(string[] fileNames)
         {
-            foreach (var path in filePaths)
+            foreach (var fileName in fileNames)
             {
-                if (VerifyPathValidity(path))
-                    File.Delete(path);
+                string filePath = Path.Combine(AssetPath, fileName);
+                if (VerifyPathValidity(filePath))
+                    File.Delete(filePath);
             }
         }
-        public async Task<string> SaveFile(IFormFile file)
-        {
-            string fileName = Guid.NewGuid().ToString();
+        public async Task<string> SaveFile(IFormFile file, string extension)
+        {            
+            string fileName = $"{Guid.NewGuid()}{extension}";
 
             string fileDestinationPath = Path.Combine(AssetPath, fileName);
             using (Stream fileStream = new FileStream(fileDestinationPath, FileMode.Create))
@@ -52,13 +58,13 @@ namespace ACESDashboard.Services
             return fileName;
         }
 
-        public async Task<List<string>> SaveFiles(IFormFile[] files)
+        public async Task<List<string>> SaveFiles(IFormFile[] files, string[] extensions)
         {
             var fileNames = new List<string>();
 
             for (int i = 0; i < files.Length; i++)
             {
-                fileNames[i] = Guid.NewGuid().ToString();
+                fileNames[i] = $"{Guid.NewGuid()}{extensions[i]}";
             }
 
             for (int i = 0; i < files.Length; i++)
@@ -74,10 +80,16 @@ namespace ACESDashboard.Services
             return fileNames;
         }
 
-        // TODO: Implement
+        public byte[] GetFile(string fileName)
+        =>  File.ReadAllBytes(Path.Combine(AssetPath, fileName));
+        
+
         private bool VerifyPathValidity(string filePath)
         {
-            return true;
+            if (File.Exists(filePath))
+                return true;
+
+            throw new FileNotFoundException("File does not exist");
         }
     }
 }
