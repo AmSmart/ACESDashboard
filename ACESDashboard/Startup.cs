@@ -4,6 +4,7 @@ using ACESDashboard.Models;
 using ACESDashboard.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
@@ -30,6 +31,8 @@ namespace ACESDashboard
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseForwardedHeaders();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -61,11 +64,33 @@ namespace ACESDashboard
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<ApplicationDbContext>(options =>
+            /*services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
                 options.UseLazyLoadingProxies();
-            });                
+            });*/
+
+            services.AddDbContext<ApplicationDbContext>(options =>
+            {
+                // Parse connection URL to connection string for Npgsql
+                string connectionString = Configuration["DATABASE_URL"];
+                connectionString = connectionString.Replace("postgres://", string.Empty);
+
+                var pgUserPass = connectionString.Split("@")[0];
+                var pgHostPortDb = connectionString.Split("@")[1];
+                var pgHostPort = pgHostPortDb.Split("/")[0];
+
+                var pgDb = pgHostPortDb.Split("/")[1];
+                var pgUser = pgUserPass.Split(":")[0];
+                var pgPass = pgUserPass.Split(":")[1];
+                var pgHost = pgHostPort.Split(":")[0];
+                var pgPort = pgHostPort.Split(":")[1];
+
+                connectionString = $"Server={pgHost};Port={pgPort};User Id={pgUser};Password={pgPass};Database={pgDb}";
+
+                options.UseLazyLoadingProxies();
+                options.UseNpgsql(connectionString);
+            });
 
             services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -81,6 +106,17 @@ namespace ACESDashboard
             }).AddEntityFrameworkStores<ApplicationDbContext>();
 
             services.AddControllersWithViews();
+
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedHost |     //Not included in the defaults using ASPNETCORE_FORWARDEDHEADERS_ENABLED
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto;
+                options.ForwardLimit = 2;
+                options.KnownNetworks.Clear(); //In a real scenario we would add the real proxy network(s) here based on a config parameter
+                options.KnownProxies.Clear();  //In a real scenario add the real proxy here based on a config parameter
+            });
 
             services.AddScoped<IStorageService, StorageService>();
 
