@@ -22,7 +22,7 @@ $('#confirmCreateAdmin').on('click', function (e) {
             },
             error: function (response) {
                 let errorMessage = "Creation Failed";
-                if (response.responseText !== null || response.responseText !== "") {
+                if (response.responseText !== null && response.responseText !== "") {
                     errorMessage = response.responseText;
                 }
                 Toastify({
@@ -68,7 +68,7 @@ $('#confirmAdminDelete').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Delete Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({
@@ -114,7 +114,7 @@ $('#confirmAddAdminWkspc').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Add Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({
@@ -160,7 +160,7 @@ $('#confirmRemAdminWkspc').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Removal Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({

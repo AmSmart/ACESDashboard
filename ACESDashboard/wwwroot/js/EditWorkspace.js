@@ -22,7 +22,7 @@ $('#confirmUpDelete').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Delete Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({
@@ -59,7 +59,7 @@ $('#confirmDocDelete').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Delete Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({
@@ -96,7 +96,7 @@ $('#confirmSecDelete').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Delete Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({
@@ -139,7 +139,8 @@ $('#confirmUpEdit').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Edit Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            console.log(response);
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({
@@ -177,7 +178,7 @@ $('#confirmSecEdit').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Edit Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({
@@ -218,7 +219,7 @@ $('#confirmMetadataEdit').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Edit Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({

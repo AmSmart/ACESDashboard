@@ -17,7 +17,7 @@ $('#confirmWkspcAdd').on('click', function (e) {
         },
         error: function (response) {
             let errorMessage = "Add Failed";
-            if (response.responseText !== null || response.responseText !== "") {
+            if (response.responseText !== null && response.responseText !== "") {
                 errorMessage = response.responseText;
             }
             Toastify({
