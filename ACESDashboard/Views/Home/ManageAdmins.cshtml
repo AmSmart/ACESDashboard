@@ -1,0 +1,182 @@
+﻿@model ManageAdminsVM
+
+@{
+    ViewData["Title"] = "Home Page";
+
+    string GetBelonged(int itemId) => string.Join(",",Model.AdminWorkspaces[itemId]);
+
+    string GetNonBelonged(int itemId)
+    {
+        var workspaces = Model.AllWorkspaces.Select(x => x.Name).ToList();
+        var belongedWorkspaces = Model.AdminWorkspaces[itemId].ToList();
+
+        foreach(var workspace in belongedWorkspaces)
+        {
+            workspaces.Remove(workspace);
+        }
+
+        return string.Join(",", workspaces);
+    }
+}
+
+<div class="text-center">
+    <div class="text-right">
+        <button id="btnCreateAdmin" class="btn btn-primary">Create New Admin</button>
+    </div>
+    <h4>List of Admins</h4>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Admin
+                </th>
+                <th>
+                    Admin's Workspaces
+                </th>
+                <th>
+
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Admins.Count; i++)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(x => x.Admins[i].Email)
+                    </td>
+                    <td>
+                        <span>
+                            @foreach (var workspace in Model.AdminWorkspaces[i])
+                            {
+                                <span class="badge badge-info">@workspace</span>
+                            }
+                        </span>
+                    </td>
+                    <td>
+                        <button data-item-belonged="@(GetBelonged(i))" data-item-non-belonged="@(GetNonBelonged(i))" data-item-id="@Model.Admins[i].Id" data-item-email="@Model.Admins[i].Email" class="btn btn-link admin-add">Add</button>
+                        <button data-item-belonged="@(GetBelonged(i))" data-item-non-belonged="@(GetNonBelonged(i))" data-item-id="@Model.Admins[i].Id" data-item-email="@Model.Admins[i].Email" class="btn btn-link admin-remove">Remove</button>
+                        <button data-item-belonged="@(GetBelonged(i))" data-item-non-belonged="@(GetNonBelonged(i))" data-item-id="@Model.Admins[i].Id" data-item-email="@Model.Admins[i].Email" class="btn btn-link admin-delete">Delete Admin</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="deleteAdminModal" tabindex="-1" role="dialog" aria-labelledby="deleteAdminModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAdminModalLabel">Delete Admin Confirmation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this Admin account?</p>
+                <code id="adminDeleteQuote"></code>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmAdminDelete" type="submit" class="btn btn-danger">Delete Admin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="remAdminWkspcModal" tabindex="-1" role="dialog" aria-labelledby="remAdminWkspcModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="remAdminWkspcModalLabel">Remove Admin from Workspace</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove Admin from this workspace?</p>
+                <code id="remAdminWkspcQuote"></code>
+                <form>
+                    <div class="form-group">
+                        <label for="belongedWorkspaces">Select Workspace</label>
+                        <select class="form-control" id="belongedWorkspaces">
+                            
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmRemAdminWkspc" type="submit" class="btn btn-danger">Remove Admin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createAdminModal" tabindex="-1" role="dialog" aria-labelledby="createAdminModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createAdminModalLabel">Create New Admin</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" class="form-control" id="email"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" id="password"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirmPassword"/>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmCreateAdmin" type="submit" class="btn btn-primary">Create Admin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addAdminWkspcModal" tabindex="-1" role="dialog" aria-labelledby="addAdminWkspcModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAdminWkspcModalLabel">Add Workspace to Admin</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Add this Admin to the workspace</p>
+                <code id="addAdminWkspcQuote"></code>
+                <form>
+                    <div class="form-group">
+                        <label for="nonBelongedWorkspaces">Select Workspace</label>
+                        <select class="form-control" id="nonBelongedWorkspaces">
+                            
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmAddAdminWkspc" type="submit" class="btn btn-primary">Add Admin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="~/js/ManageAdmins.js"></script>
+}

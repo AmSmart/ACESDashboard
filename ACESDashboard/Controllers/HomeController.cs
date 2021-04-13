@@ -1,5 +1,6 @@
 ﻿using ACESDashboard.Data;
 using ACESDashboard.Data.Repository;
+using ACESDashboard.Filters;
 using ACESDashboard.Models;
 using ACESDashboard.Services;
 using ACESDashboard.ViewModels;
@@ -7,16 +8,20 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace ACESDashboard.Controllers
 {
+    [TypeFilter(typeof(ExceptionFilter))]
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _dbContext;
@@ -47,95 +52,251 @@ namespace ACESDashboard.Controllers
             _sectionRepository = sectionRepository;
         }
 
-        public async Task<IActionResult> AddDocument([FromForm] IFormFile file, string fileName, int workspaceId, string sectionName)
-        {
-            var workspace = await _workspaceRepository.GetByIdAsync(workspaceId);
-            var section = workspace.Sections.FirstOrDefault(x => x.Name == sectionName);
-            string fileExtension = Path.GetExtension(file.FileName);
-
-            string storedFileName = await _storageService.SaveFile(file, fileExtension);
-
-            var document = new Document
+        public async Task<IActionResult> AddAdminToWorkspace(string userId, string workspaceName)
+        {            
+            if(User.FindFirst(Constants.SuperAdminClaim) is not null)
             {
-                Name = fileName,
-                Section = section,
-                FileContentType = file.ContentType,
-                FileExtension = fileExtension,
-                FileName = storedFileName,
-                TimePosted = DateTime.UtcNow
-            };
+                if (string.IsNullOrWhiteSpace(workspaceName))
+                {
+                    return BadRequest("Name cannot be blank");
+                }
 
-            await _documentRepository.CreateAsync(document);
-            return RedirectToAction("Workspace", new { id = workspaceId, activeOnly = true });
+                var claims = await _dbContext.UserClaims.Where(x => x.ClaimType == Constants.AdminClaim && x.UserId == userId)
+                .ToListAsync();
+                string workspaceGuid = _dbContext.Workspaces.FirstOrDefault(x => x.Name == workspaceName).Guid.ToString();
+
+                if (claims.FirstOrDefault(x => x.ClaimValue == workspaceGuid) is null)
+                {
+                    _dbContext.UserClaims.Add(new IdentityUserClaim<string>
+                    {
+                        UserId = userId,
+                        ClaimType = Constants.AdminClaim,
+                        ClaimValue = workspaceGuid
+                    });
+                    await _dbContext.SaveChangesAsync();
+                    return Ok();
+                }
+                string errorMessage = "User is already an admin in this workspace";
+                return BadRequest(errorMessage);
+            }
+            return Unauthorized();
+        }
+
+        public async Task<IActionResult> AddDocument([FromForm] IFormFile file, string fileName,
+            int workspaceId, string sectionName)
+        {   
+            if(file == null || string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(sectionName))
+            {
+                return RedirectToAction("Workspace", new { id = workspaceId, returnMessage = "F Fields cannot be blank" });
+            }
+
+            var workspace = await _workspaceRepository.GetByIdAsync(workspaceId);
+
+            if(User.FindFirst(Constants.SuperAdminClaim) is not null 
+                || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == workspace.Guid.ToString()))
+            {
+                var section = workspace.Sections.FirstOrDefault(x => x.Name == sectionName);
+                string fileExtension = Path.GetExtension(file.FileName);
+
+                string storedFileName = await _storageService.SaveFile(file, fileExtension);
+
+                var document = new Document
+                {
+                    Name = fileName,
+                    Section = section,
+                    FileContentType = file.ContentType,
+                    FileExtension = fileExtension,
+                    FileName = storedFileName,
+                    TimePosted = DateTime.UtcNow
+                };
+
+                await _documentRepository.CreateAsync(document);
+                return RedirectToAction("Workspace", new { id = workspaceId, activeOnly = true });
+            }
+            return Unauthorized();
         }
 
         public async Task<IActionResult> AddSection(string sectionName, int workspaceId)
-        {
+        {            
+
             var workspace = await _workspaceRepository.GetByIdAsync(workspaceId);
 
-            bool nameCollision = workspace.Sections.Select(x => x.Name).Contains(sectionName);
-
-            if (nameCollision)
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null
+                || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == workspace.Guid.ToString()))
             {
-                // TODO: Return View with error            
+                if (string.IsNullOrWhiteSpace(sectionName))
+                {
+                    return BadRequest("Name cannot be blank");
+                }
+
+                bool nameCollision = workspace.Sections.Select(x => x.Name).Contains(sectionName);
+
+                if (nameCollision)
+                {
+                    string errorMessage = $"Section named '{sectionName}' already exists";
+                    return BadRequest(errorMessage);
+                }
+
+                var section = new Section { Name = sectionName, Workspace = workspace };
+
+                await _sectionRepository.CreateAsync(section);
+                return Ok();
             }
-
-            var section = new Section { Name = sectionName, Workspace = workspace };
-
-            await _sectionRepository.CreateAsync(section);
-            return Ok();
+            return Unauthorized();
         }
 
         public async Task<IActionResult> AddUpdate(string updateText, DateTime expiryTime, int workspaceId)
-        {
+        {            
             var workspace = await _workspaceRepository.GetByIdAsync(workspaceId);
-            var update = new Update
-            {
-                Text = updateText,
-                ExpiresAt = expiryTime,
-                Workspace = workspace,
-                TimePosted = DateTime.UtcNow,
-            };
 
-            await _updateRespository.CreateAsync(update);
-            return Ok();
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null
+                || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == workspace.Guid.ToString()))
+            {
+                if (string.IsNullOrWhiteSpace(updateText))
+                {
+                    return BadRequest("Text cannot be blank");
+                }
+
+                var update = new Update
+                {
+                    Text = updateText,
+                    ExpiresAt = expiryTime,
+                    Workspace = workspace,
+                    TimePosted = DateTime.UtcNow,
+                };
+
+                await _updateRespository.CreateAsync(update);
+                return Ok();
+            }
+            return Unauthorized();
+        }
+
+        public async Task<IActionResult> CreateAdmin(string email, string password, string confirmPassword)
+        {
+            if(User.FindFirst(Constants.SuperAdminClaim) is not null)
+            {
+                if (string.IsNullOrWhiteSpace(email) 
+                    || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword))
+                {
+                    return BadRequest("Fields cannot be blank");
+                }
+
+                if (password == confirmPassword)
+                {
+                    var user = new ApplicationUser { Email = email, UserName = email };
+                    var result = await _userManager.CreateAsync(user, password);
+                    if (result.Succeeded)
+                    {
+                        await _userManager.AddClaimAsync(user, new Claim(Constants.AdminClaim, ""));
+                        return Ok();
+                    }
+                    string errors = string.Join(",", result.Errors.Select(x => x.Description));
+                    return BadRequest($"Error(s): {errors}");
+                }
+                return Ok();
+            }
+            return Unauthorized();
         }
 
         public async Task<IActionResult> CreateWorkspace(string name, string tag)
         {
-            var workspace = new Workspace
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null)
             {
-                Name = name,
-                Tag = tag,
-            };
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return BadRequest("Name cannot be blank");
+                }
 
-            await _workspaceRepository.CreateAsync(workspace);
-            return Ok();
+                bool nameCollision = _dbContext.Workspaces.Select(x => x.Name).Contains(name);
+
+                if (!nameCollision)
+                {
+                    var workspace = new Workspace
+                    {
+                        Name = name,
+                        Tag = tag,
+                    };
+
+                    await _workspaceRepository.CreateAsync(workspace);
+                    return Ok();
+                }
+                string errorMessage = $"Workspace named {name} already exists";
+                return BadRequest(errorMessage);
+            }
+            return Unauthorized();
+        }
+
+        public async Task<IActionResult> DeleteAdmin(string id)
+        {
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null)
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                await _userManager.DeleteAsync(user);
+                return Ok();
+            }
+            return Unauthorized();
         }
 
         public async Task<IActionResult> DeleteDocument(int id)
         {
             var document = await _documentRepository.GetByIdAsync(id);
-            _storageService.DeleteFile(document.FileName);
-            await _documentRepository.DeleteAsync(document);
-            return Ok();
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null
+                || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == document.Section.Workspace.Guid.ToString()))
+            {
+                _storageService.DeleteFile(document.FileName);
+                await _documentRepository.DeleteAsync(document);
+                return Ok();
+            }
+            return Unauthorized();
         }
 
         public async Task<IActionResult> DeleteSection(int id)
         {
             var section = await _sectionRepository.GetByIdAsync(id);
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null
+                || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == section.Workspace.Guid.ToString()))
+            {
 
-            var sectionFileNames = section.Documents.Select(x => x.FileName).ToArray();
-            _storageService.DeleteFiles(sectionFileNames);
+                var sectionFileNames = section.Documents.Select(x => x.FileName).ToArray();
+                _storageService.DeleteFiles(sectionFileNames);
 
-            await _sectionRepository.DeleteAsync(section);
-            return Ok();
+                await _sectionRepository.DeleteAsync(section);
+                return Ok();
+            }
+            return Unauthorized();
         }
 
         public async Task<IActionResult> DeleteUpdate(int id)
         {
-            await _updateRespository.DeleteAsync(new Update { Id = id });
-            return Ok();
+            var update = await _updateRespository.GetByIdAsync(id);
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null
+                || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == update.Workspace.Guid.ToString()))
+            {
+                await _updateRespository.DeleteAsync(new Update { Id = id });
+                return Ok();
+            }
+            return Unauthorized();
+        }
+
+        public async Task<IActionResult> DeleteWorkspace(int id)
+        {
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null)
+            {
+                var workspace = await _workspaceRepository.GetByIdAsync(id);
+
+                var sectionsToDelete = await _dbContext.Sections.Where(x => x.Workspace.Id == id).ToListAsync();
+                var updatesToDelete = await _dbContext.Updates.Where(x => x.Workspace.Id == id).ToListAsync();
+                var userClaimsToDelete = await _dbContext.UserClaims.Where(x => x.ClaimValue == workspace.Guid.ToString()).ToListAsync();
+
+                _dbContext.Sections.RemoveRange(sectionsToDelete);
+                _dbContext.Updates.RemoveRange(updatesToDelete);
+                _dbContext.UserClaims.RemoveRange(userClaimsToDelete);
+                await _dbContext.SaveChangesAsync();
+
+                await _workspaceRepository.DeleteAsync(workspace);
+                return RedirectToAction("Index");
+            }
+            return Unauthorized();
         }
 
         public IActionResult DownloadDocument(string fileName, string name, string fileExtension, string contentType)
@@ -144,42 +305,86 @@ namespace ACESDashboard.Controllers
             return File(file, contentType, $"{name}{fileExtension}");
         }
 
-        public async Task<IActionResult> EditUpdate(int id, string newUpdateText, DateTime expiryTime, DateTime postedAt)
+        public async Task<IActionResult> EditSection(int id, string name)
         {
-            var update = new Update
+            bool nameCollision = _dbContext.Sections.Select(x => x.Name).Contains(name);
+
+            if (!nameCollision)
             {
-                Id = id,
-                Text = newUpdateText,
-                ExpiresAt = expiryTime,
-                TimePosted = postedAt
-            };
+                var section = await _sectionRepository.GetByIdAsync(id);
+                section.Name = name;
+                await _sectionRepository.UpdateAsync(section);
+                return Ok();
+            }
+            string errorMessage = $"Section named {name} already exists in this workspace";
+            return BadRequest(errorMessage);
+        }
 
-            await _updateRespository.UpdateAsync(update);
-            return Ok();
+        public async Task<IActionResult> EditUpdate(int id, string newUpdateText, DateTime expiryTime)
+        {
+            var update = await _updateRespository.GetByIdAsync(id);
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null
+                || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == update.Workspace.Guid.ToString()))
+            {
+                if (string.IsNullOrWhiteSpace(newUpdateText))
+                {
+                    return BadRequest("Text cannot be blank");
+                }
 
+                var newUpdate = new Update
+                {
+                    Id = id,
+                    Text = newUpdateText,
+                    ExpiresAt = expiryTime,
+                    TimePosted = update.TimePosted
+                };
+
+                await _updateRespository.UpdateAsync(newUpdate);
+                return Ok();
+            }
+            return Unauthorized();
         }
 
         public async Task<IActionResult> EditWorkspace(int id, bool activeOnly)
         {
             var workspace = await _workspaceRepository.GetByIdAsync(id, activeOnly);
-            var model = new EditWorkspaceVM
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null
+                || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == workspace.Guid.ToString()))
             {
-                ActiveUpdatesOnly = activeOnly,
-                Archived = workspace.Archived,
-                Guid = workspace.Guid,
-                Id = workspace.Id,
-                Name = workspace.Name,
-                Sections = workspace.Sections,
-                Tag = workspace.Tag,
-                Updates = workspace.Updates.OrderByDescending(x => x.TimePosted).ToList()
-            };
-            return View(model);
+                var model = new EditWorkspaceVM
+                {
+                    ActiveUpdatesOnly = activeOnly,
+                    Archived = workspace.Archived,
+                    Guid = workspace.Guid,
+                    Id = workspace.Id,
+                    Name = workspace.Name,
+                    Sections = workspace.Sections,
+                    Tag = workspace.Tag,
+                    Updates = workspace.Updates.OrderByDescending(x => x.TimePosted).ToList()
+                };
+                return View(model);
+            }
+            return NotFound();
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        public async Task<IActionResult> EditWorkspaceNameAndTag(int id, string name, string tag)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(name))
+            {
+                return BadRequest("Fields cannot be blank");
+            }
+
+            bool nameCollision = _dbContext.Workspaces.Select(x => x.Name).Contains(name);
+            if (!nameCollision)
+            {
+                var workspace = await _workspaceRepository.GetByIdAsync(id);
+                workspace.Name = name;
+                workspace.Tag = tag;
+                await _workspaceRepository.UpdateAsync(workspace);
+                return Ok();
+            }
+            string errorMessage = $"Workspace named {name} already exists";
+            return BadRequest(errorMessage);
         }
 
         public async Task<IActionResult> Index(bool activeOnly = true)
@@ -188,14 +393,77 @@ namespace ACESDashboard.Controllers
 
             return View(new IndexViewModel { Workspaces = workspaces, ActiveOnly = activeOnly });
         }
-        
-        [HttpGet("do")]
-        public async Task<IActionResult> Utils()
+
+        public async Task<IActionResult> ManageAdmins()
         {
-            //var user = User.FindFirst("");
-            var user = await _userManager.FindByIdAsync("8f4e774d-b853-4aa5-964b-0766be235803");
-            //await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("SuperAdminClaim", ""));
-            var x = User.FindFirst(Constants.SuperAdminClaim);
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null)
+            {
+                var userClaims = await _dbContext.UserClaims.ToListAsync();
+                var workspaces = await _dbContext.Workspaces.ToListAsync();
+
+                var adminIds = userClaims
+                    .Where(x => x.ClaimType == Constants.AdminClaim)
+                    .Select(x => x.UserId);
+                var admins = await _dbContext.Users.Where(x => adminIds.Contains(x.Id)).ToListAsync();
+                var adminWorkspaces = new List<string[]> { };
+
+                foreach (var admin in admins)
+                {
+                    var guids = userClaims.Where(x => x.UserId == admin.Id && x.ClaimType == Constants.AdminClaim)
+                        .Select(x => x.ClaimValue)
+                        .ToArray();
+                    var names = new List<string>();
+                    for (int i = 0; i < guids.Length; i++)
+                    {
+                        if (!string.IsNullOrEmpty(guids[i]))
+                        {
+                            string name = workspaces.FirstOrDefault(x => x.Guid.ToString() == guids[i]).Name;
+                            names.Add(name);
+                        }
+                    }
+                    adminWorkspaces.Add(names.ToArray());
+                }
+
+                return View(new ManageAdminsVM { Admins = admins, AdminWorkspaces = adminWorkspaces, AllWorkspaces = workspaces });
+            }
+            return NotFound();
+        }
+
+        public async Task<IActionResult> RemoveAdminFromWorkspace(string userId, string workspaceName)
+        {
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null)
+            {
+                var claims = await _dbContext.UserClaims.Where(x => x.ClaimType == Constants.AdminClaim && x.UserId == userId)
+                    .ToListAsync();
+                string workspaceGuid = _dbContext.Workspaces.FirstOrDefault(x => x.Name == workspaceName).Guid.ToString();
+                var claim = claims.FirstOrDefault(x => x.ClaimValue == workspaceGuid);
+
+                if (claim is not null)
+                {
+                    _dbContext.UserClaims.Remove(claim);
+                    await _dbContext.SaveChangesAsync();
+                    return Ok();
+                }
+                string errorMessage = "User is not an admin in this workspace";
+                return BadRequest(errorMessage);
+            }
+            return Unauthorized();
+        }
+
+        public async Task<IActionResult> ToggleWorkspaceArchivedState(int id)
+        {
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null)
+            {
+                var workspace = await _workspaceRepository.GetByIdAsync(id);
+                await _workspaceRepository.ToggleArchivedStateAsync(workspace);
+                return RedirectToAction("EditWorkspace", new { Id = id, ActiveOnly = true });
+            }
+            return Unauthorized();
+        }
+
+        [HttpGet("do")]
+        public IActionResult Utils()
+        {
             return Ok("Done");
         }
 

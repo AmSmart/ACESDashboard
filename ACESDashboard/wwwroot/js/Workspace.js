@@ -16,11 +16,21 @@ $('#confirmUpAdd').on('click', function (e) {
             expiryTime: new Date($('#expiryTime').val()).toISOString()
         },
         success: function () {
-            location.reload();
-            alert('Add Successful!');
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('returnMessage', 'S Add Successful');
+            window.location.search = urlParams;
         },
-        error: function () {
-            alert('Add failed');
+        error: function (response) {
+            let errorMessage = "Add Failed";
+            if (response.responseText !== null || response.responseText !== "") {
+                errorMessage = response.responseText;
+            }
+            Toastify({
+                text: errorMessage,
+                style: { background: "linear-gradient(to right, #e74168, #bd1010)" },
+                position: 'center',
+                duration: 3000
+            }).showToast();
         }
     });
 });
@@ -38,11 +48,21 @@ $('#confirmSecAdd').on('click', function (e) {
             sectionName: $('#newSectionName').val()        
         },
         success: function () {
-            location.reload();
-            alert('Add Successful!');
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('returnMessage', 'S Add Successful');
+            window.location.search = urlParams;
         },
-        error: function () {
-            alert('Add failed');
+        error: function (response) {
+            let errorMessage = "Add Failed";
+            if (response.responseText !== null || response.responseText !== "") {
+                errorMessage = response.responseText;
+            }
+            Toastify({
+                text: errorMessage,
+                style: { background: "linear-gradient(to right, #e74168, #bd1010)"},
+                position: 'center',
+                duration: 3000
+            }).showToast();
         }
     });
 });

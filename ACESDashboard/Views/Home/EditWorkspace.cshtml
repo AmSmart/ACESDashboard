@@ -3,26 +3,44 @@
 @{
     ViewData["Title"] = "Workspace";
     string updatesText = Model.ActiveUpdatesOnly ? "(View All Updates)" : "(View Active Updates)";
+    string toggleArchiveButtonText = Model.Archived ? "Unarchive" : "Archive";
 }
 
 <div class="text-center">
     <div class="text-left">
         <a asp-action="Workspace" asp-route-id="@Model.Id" asp-route-activeOnly="@Model.ActiveUpdatesOnly">Go Back</a>
     </div>
+    @if (User.FindFirst(Constants.SuperAdminClaim) is not null)
+    {
+        <div class="text-right">
+            <a asp-action="ToggleWorkspaceArchivedState" asp-route-id="@Model.Id" class="btn btn-primary">@toggleArchiveButtonText</a>
+            <button id="editMetadata" class="btn btn-primary" data-item-id="@Model.Id" data-item-name="@Model.Name" data-item-tag="@Model.Tag">Edit Metadata</button>
+            <a asp-action="DeleteWorkspace" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+        </div>
+    }
+
+    <br />
+    <h5>@Model.Name</h5>
+    <p>@Model.Tag</p>
+
     <h3>Important Updates</h3>
     <a asp-action="EditWorkspace" asp-route-id="@Model.Id" asp-route-activeOnly="@(!Model.ActiveUpdatesOnly)"><p>@updatesText</p></a>
-    <ul>
-        @for (int i = 0; i < @Model.Updates.Count; i++)
-        {
-            <li class="mb-1">
-                <span>
-                    @($"{Model.Updates[i].Text} - Posted at {Model.Updates[i].TimePosted:F}")
-                    <button class="btn btn-primary up-edit" data-item-id="@Model.Updates[i].Id" data-item-text="@Model.Updates[i].Text" data-item-expiry-time="@(Model.Updates[i].ExpiresAt.ToString("o"))" data-item-posted-time="@(Model.Updates[i].TimePosted.ToString("o"))">Edit</button>
-                    <button class="btn btn-danger up-delete" data-item-id="@Model.Updates[i].Id" data-item-text="@Model.Updates[i].Text">Delete</button>
-                </span>
-            </li>
-        }
-    </ul>
+
+    <div class="text-danger">
+        <ul>
+            @for (int i = 0; i < @Model.Updates.Count; i++)
+            {
+                <li class="mb-1">
+                    <span>
+                        @($"{Model.Updates[i].Text} - Posted at {Model.Updates[i].TimePosted:F}")
+                        <button class="btn btn-primary up-edit" data-item-id="@Model.Updates[i].Id" data-item-text="@Model.Updates[i].Text" data-item-expiry-time="@(Model.Updates[i].ExpiresAt.ToString("o"))" data-item-posted-time="@(Model.Updates[i].TimePosted.ToString("o"))">Edit</button>
+                        <button class="btn btn-danger up-delete" data-item-id="@Model.Updates[i].Id" data-item-text="@Model.Updates[i].Text">Delete</button>
+                    </span>
+                </li>
+            }
+        </ul>
+    </div>
+
 
     @for (int i = 0; i < Model.Sections.Count; i++)
     {
@@ -36,6 +54,9 @@
                         <span>
                             <button class="btn btn-link" data-toggle="collapse" data-target="@hashId" aria-expanded="true" aria-controls="collapseOne">
                                 @Model.Sections[i].Name
+                            </button>
+                            <button class="btn btn-primary sec-edit" data-item-id="@Model.Sections[i].Id" data-item-name="@Model.Sections[i].Name">
+                                Edit
                             </button>
                             <button class="btn btn-danger sec-delete" data-item-id="@Model.Sections[i].Id" data-item-name="@Model.Sections[i].Name">
                                 Delete
@@ -129,11 +150,11 @@
     </div>
 </div>
 
-<div class="modal fade" id="editUpModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+<div class="modal fade" id="editUpModal" tabindex="-1" role="dialog" aria-labelledby="editUpModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editModalLabel">Edit Update</h5>
+                <h5 class="modal-title" id="editUpModalLabel">Edit Update</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -148,13 +169,69 @@
                     <div class="form-group">
                         <label for="expiryTime">Expires At</label>
                         <input class="form-control" type="datetime-local" id="expiryTime" />
-                        <input hidden class="form-control" type="datetime-local" id="postedTime" />
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 <button id="confirmUpEdit" type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editSecModal" tabindex="-1" role="dialog" aria-labelledby="editSecModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSecModalLabel">Edit Section Name</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to edit this section?</p>
+                <form>
+                    <div class="form-group">
+                        <label class="form-label" for="sectionName">New Section Name</label>
+                        <input type="text" class="form-control" id="sectionName" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmSecEdit" type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editMetadataModal" tabindex="-1" role="dialog" aria-labelledby="editMetadataModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editMetadataModalLabel">Edit Section Name</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to edit this workspace's metadata?</p>
+                <form>
+                    <div class="form-group">
+                        <label class="form-label" for="workspaceName">Name</label>
+                        <input type="text" class="form-control" id="workspaceName" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="workspaceTag">Tag</label>
+                        <input type="text" class="form-control" id="workspaceTag" />
+                    </div>
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmMetadataEdit" type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </div>
     </div>

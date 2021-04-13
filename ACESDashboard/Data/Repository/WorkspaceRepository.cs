@@ -17,10 +17,11 @@ namespace ACESDashboard.Data.Repository
 
         public ApplicationDbContext DbContext { get; }
 
-        public async Task<Workspace> ArchiveWorkspaceAsync(Workspace workspace)
+        public async Task<Workspace> ToggleArchivedStateAsync(Workspace workspace)
         {
-            workspace.Archived = true;
-            DbContext.Workspaces.Update(workspace);
+            workspace.Archived = !workspace.Archived;
+            DbContext.Attach(workspace);
+            DbContext.Entry(workspace).Property(x => x.Archived).IsModified = true;
             await DbContext.SaveChangesAsync();
             return workspace;
         }
@@ -53,9 +54,16 @@ namespace ACESDashboard.Data.Repository
             return workspace;
         }            
 
-        public async Task<Workspace> UpdateWorkspaceAsync(Workspace workspace)
+        public async Task<Workspace> UpdateAsync(Workspace workspace)
         {
             DbContext.Workspaces.Update(workspace);
+            await DbContext.SaveChangesAsync();
+            return workspace;
+        }
+
+        public async Task<Workspace> DeleteAsync(Workspace workspace)
+        {
+            DbContext.Workspaces.Remove(workspace);
             await DbContext.SaveChangesAsync();
             return workspace;
         }

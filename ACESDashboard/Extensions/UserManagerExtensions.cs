@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ACESDashboard.ViewModels
+namespace ACESDashboard.Extensions
 {
-    public class ManageWorkspaceVM
+    public class UserManagerExtensions
     {
         
     }

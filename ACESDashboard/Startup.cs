@@ -71,6 +71,12 @@ namespace ACESDashboard
 
             services.AddDefaultIdentity<ApplicationUser>(options =>
             {
+                options.Password.RequireDigit = false;
+                options.Password.RequiredLength = 5;
+                options.Password.RequiredUniqueChars = 0;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
                 //options.SignIn.RequireConfirmedAccount = true;
             }).AddEntityFrameworkStores<ApplicationDbContext>();
 
@@ -85,9 +91,3 @@ namespace ACESDashboard
         }
     }
 }
-
-// TODO: Custom Error managemnet with toasts
-// TODO: Replace alert dialogs with toasts
-// TODO: Implement authorisation for each action in the conroller
-// TODO: Implement Admin Management
-// TODO: Beautify

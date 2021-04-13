@@ -16,11 +16,21 @@ $('#confirmUpDelete').on('click', function (e) {
             id: $(this).data('itemId')
         },
         success: function () {
-            location.reload();
-            alert('Delete Successful!');
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('returnMessage', 'S Delete Successful');
+            window.location.search = urlParams;
         },
-        error: function () {
-            alert('Delete failed');
+        error: function (response) {
+            let errorMessage = "Delete Failed";
+            if (response.responseText !== null || response.responseText !== "") {
+                errorMessage = response.responseText;
+            }
+            Toastify({
+                text: errorMessage,
+                style: { background: "linear-gradient(to right, #e74168, #bd1010)" },
+                position: 'center',
+                duration: 3000
+            }).showToast();
         }
     });
 });
@@ -43,11 +53,21 @@ $('#confirmDocDelete').on('click', function (e) {
             id: $(this).data('itemId')
         },
         success: function () {
-            location.reload();
-            alert('Delete Successful!');
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('returnMessage', 'S Delete Successful');
+            window.location.search = urlParams;
         },
-        error: function () {
-            alert('Delete failed');
+        error: function (response) {
+            let errorMessage = "Delete Failed";
+            if (response.responseText !== null || response.responseText !== "") {
+                errorMessage = response.responseText;
+            }
+            Toastify({
+                text: errorMessage,
+                style: { background: "linear-gradient(to right, #e74168, #bd1010)" },
+                position: 'center',
+                duration: 3000
+            }).showToast();
         }
     });
 });
@@ -70,11 +90,21 @@ $('#confirmSecDelete').on('click', function (e) {
             id: $(this).data('itemId')
         },
         success: function () {
-            location.reload();
-            alert('Delete Successful!');
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('returnMessage', 'S Delete Successful');
+            window.location.search = urlParams;
         },
-        error: function () {
-            alert('Delete failed');
+        error: function (response) {
+            let errorMessage = "Delete Failed";
+            if (response.responseText !== null || response.responseText !== "") {
+                errorMessage = response.responseText;
+            }
+            Toastify({
+                text: errorMessage,
+                style: { background: "linear-gradient(to right, #e74168, #bd1010)" },
+                position: 'center',
+                duration: 3000
+            }).showToast();
         }
     });
 });
@@ -85,15 +115,12 @@ $('.up-edit').on('click', function (e) {
     let updateText = $(this).data('itemText');
     let itemId = $(this).data('itemId');
     let itemExpiryTime = $(this).data('itemExpiryTime');
-    let itemPostedTime = $(this).data('itemPostedTime');
 
     itemExpiryTime = isoToJS(itemExpiryTime);
-    itemPostedTime = isoToJS(itemPostedTime);
 
     $('#updateText').val(updateText);
     $('#confirmUpEdit').data('itemId', itemId);
     $('#expiryTime').val(itemExpiryTime);
-    $('#postedTime').val(itemPostedTime);
 });
 
 $('#confirmUpEdit').on('click', function (e) {
@@ -103,15 +130,103 @@ $('#confirmUpEdit').on('click', function (e) {
         data: {
             id: $(this).data('itemId'),
             newUpdateText: $('#updateText').val(),
-            expiryTime: $('#expiryTime').val(),
-            postedAt: $('#postedTime').val()
+            expiryTime: $('#expiryTime').val()
+        },
+        success: function () {            
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('returnMessage', 'S Edit Successful');
+            window.location.search = urlParams;
+        },
+        error: function (response) {
+            let errorMessage = "Edit Failed";
+            if (response.responseText !== null || response.responseText !== "") {
+                errorMessage = response.responseText;
+            }
+            Toastify({
+                text: errorMessage,
+                style: { background: "linear-gradient(to right, #e74168, #bd1010)" },
+                position: 'center',
+                duration: 3000
+            }).showToast();
+        }
+    });
+});
+
+$('.sec-edit').on('click', function (e) {
+    $('#editSecModal').modal('show');
+
+    let sectionName = $(this).data('itemName');
+    let itemId = $(this).data('itemId');
+    
+    $('#sectionName').val(sectionName);
+    $('#confirmSecEdit').data('itemId', itemId);
+});
+
+$('#confirmSecEdit').on('click', function (e) {
+    $.ajax({
+        url: '/home/editsection',
+        type: 'POST',
+        data: {
+            id: $(this).data('itemId'),
+            name: $('#sectionName').val()
+        },
+        success: function () {            
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('returnMessage', 'S Edit Successful');
+            window.location.search = urlParams;
+        },
+        error: function (response) {
+            let errorMessage = "Edit Failed";
+            if (response.responseText !== null || response.responseText !== "") {
+                errorMessage = response.responseText;
+            }
+            Toastify({
+                text: errorMessage,
+                style: { background: "linear-gradient(to right, #e74168, #bd1010)" },
+                position: 'center',
+                duration: 3000
+            }).showToast();
+        }
+    });
+});
+
+$('#editMetadata').on('click', function (e) {
+    $('#editMetadataModal').modal('show');
+
+    let workspaceName = $(this).data('itemName');
+    let workspaceTag = $(this).data('itemTag');
+    let itemId = $(this).data('itemId');
+
+    $('#workspaceName').val(workspaceName);
+    $('#workspaceTag').val(workspaceTag);
+    $('#confirmMetadataEdit').data('itemId', itemId);
+});
+
+$('#confirmMetadataEdit').on('click', function (e) {
+    $.ajax({
+        url: '/home/editworkspacenameandtag',
+        type: 'POST',
+        data: {
+            id: $(this).data('itemId'),
+            name: $('#workspaceName').val(),
+            tag: $('#workspaceTag').val()
         },
         success: function () {
-            location.reload();
-            alert('Edit Successful!');
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('returnMessage', 'S Edit Successful');
+            window.location.search = urlParams;
         },
-        error: function () {
-            alert('Edit failed');
+        error: function (response) {
+            let errorMessage = "Edit Failed";
+            if (response.responseText !== null || response.responseText !== "") {
+                errorMessage = response.responseText;
+            }
+            Toastify({
+                text: errorMessage,
+                style: { background: "linear-gradient(to right, #e74168, #bd1010)" },
+                position: 'center',
+                duration: 3000
+            }).showToast();
         }
     });
 });
