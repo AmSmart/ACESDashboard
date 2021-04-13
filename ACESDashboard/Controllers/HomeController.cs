@@ -462,8 +462,14 @@ namespace ACESDashboard.Controllers
         }
 
         [HttpGet("do")]
-        public IActionResult Utils()
+        public async Task<IActionResult> Utils()
         {
+            var user = new ApplicationUser
+            {
+                UserName = "aces@eng.uniben.edu",
+                Email = "aces@eng.uniben.edu",
+            };
+            await _userManager.CreateAsync(user, "aces12345");
             return Ok("Done");
         }
 

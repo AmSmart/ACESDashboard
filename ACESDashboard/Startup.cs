@@ -87,6 +87,7 @@ namespace ACESDashboard
                 var pgPort = pgHostPort.Split(":")[1];
 
                 connectionString = $"Server={pgHost};Port={pgPort};User Id={pgUser};Password={pgPass};Database={pgDb}";
+                connectionString += ";sslmode=Require;Trust Server Certificate=true;";
 
                 options.UseLazyLoadingProxies();
                 options.UseNpgsql(connectionString);
