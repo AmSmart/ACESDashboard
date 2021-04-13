@@ -272,7 +272,7 @@ namespace ACESDashboard.Controllers
             if (User.FindFirst(Constants.SuperAdminClaim) is not null
                 || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == update.Workspace.Guid.ToString()))
             {
-                await _updateRespository.DeleteAsync(new Update { Id = id });
+                await _updateRespository.DeleteAsync(update);
                 return Ok();
             }
             return Unauthorized();
@@ -331,15 +331,10 @@ namespace ACESDashboard.Controllers
                     return BadRequest("Text cannot be blank");
                 }
 
-                var newUpdate = new Update
-                {
-                    Id = id,
-                    Text = newUpdateText,
-                    ExpiresAt = expiryTime,
-                    TimePosted = update.TimePosted
-                };
+                update.Text = newUpdateText;
+                update.ExpiresAt = expiryTime;               
 
-                await _updateRespository.UpdateAsync(newUpdate);
+                await _updateRespository.UpdateAsync(update);
                 return Ok();
             }
             return Unauthorized();
@@ -464,12 +459,8 @@ namespace ACESDashboard.Controllers
         [HttpGet("do")]
         public async Task<IActionResult> Utils()
         {
-            var user = new ApplicationUser
-            {
-                UserName = "aces@eng.uniben.edu",
-                Email = "aces@eng.uniben.edu",
-            };
-            await _userManager.CreateAsync(user, "aces12345");
+            var user = _dbContext.Users.First();
+            await _userManager.AddClaimAsync(user, new Claim(Constants.SuperAdminClaim, ""));
             return Ok("Done");
         }
 
