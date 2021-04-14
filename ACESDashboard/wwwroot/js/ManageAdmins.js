@@ -81,6 +81,45 @@ $('#confirmAdminDelete').on('click', function (e) {
     });
 });
 
+$('.admin-password-change').on('click', function (e) {
+    $('#changeAdminPasswordModal').modal('show');
+
+    let adminEmail = $(this).data('itemEmail');
+    let itemId = $(this).data('itemId');
+
+    $('#adminPasswordChangeQuote').text(adminEmail);
+    $('#confirmAdminPasswordChange').data('itemId', itemId);
+});
+
+$('#confirmAdminPasswordChange').on('click', function (e) {
+    $.ajax({
+        url: '/home/changeadminpassword',
+        type: 'POST',
+        data: {
+            userId: $(this).data('itemId'),
+            password: $('#adminNewPassword').val(),
+            confirmPassword: $('#adminConfirmNewPassword').val()
+        },
+        success: function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('returnMessage', 'S Password Change Successful');
+            window.location.search = urlParams;
+        },
+        error: function (response) {
+            let errorMessage = "Password Change Failed";
+            if (response.responseText !== null && response.responseText !== "") {
+                errorMessage = response.responseText;
+            }
+            Toastify({
+                text: errorMessage,
+                style: { background: "linear-gradient(to right, #e74168, #bd1010)" },
+                position: 'center',
+                duration: 3000
+            }).showToast();
+        }
+    });
+});
+
 $('.admin-add').on('click', function(e) {
     $('#addAdminWkspcModal').modal('show');
 

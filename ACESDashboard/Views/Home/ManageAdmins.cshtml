@@ -3,14 +3,14 @@
 @{
     ViewData["Title"] = "Home Page";
 
-    string GetBelonged(int itemId) => string.Join(",",Model.AdminWorkspaces[itemId]);
+    string GetBelonged(int itemId) => string.Join(",", Model.AdminWorkspaces[itemId]);
 
     string GetNonBelonged(int itemId)
     {
         var workspaces = Model.AllWorkspaces.Select(x => x.Name).ToList();
         var belongedWorkspaces = Model.AdminWorkspaces[itemId].ToList();
 
-        foreach(var workspace in belongedWorkspaces)
+        foreach (var workspace in belongedWorkspaces)
         {
             workspaces.Remove(workspace);
         }
@@ -57,6 +57,7 @@
                     <td>
                         <button data-item-belonged="@(GetBelonged(i))" data-item-non-belonged="@(GetNonBelonged(i))" data-item-id="@Model.Admins[i].Id" data-item-email="@Model.Admins[i].Email" class="btn btn-link admin-add">Add</button>
                         <button data-item-belonged="@(GetBelonged(i))" data-item-non-belonged="@(GetNonBelonged(i))" data-item-id="@Model.Admins[i].Id" data-item-email="@Model.Admins[i].Email" class="btn btn-link admin-remove">Remove</button>
+                        <button data-item-id="@Model.Admins[i].Id" data-item-email="@Model.Admins[i].Email" class="btn btn-link admin-password-change">Change Password</button>
                         <button data-item-belonged="@(GetBelonged(i))" data-item-non-belonged="@(GetNonBelonged(i))" data-item-id="@Model.Admins[i].Id" data-item-email="@Model.Admins[i].Email" class="btn btn-link admin-delete">Delete Admin</button>
                     </td>
                 </tr>
@@ -86,6 +87,36 @@
     </div>
 </div>
 
+<div class="modal fade" id="changeAdminPasswordModal" tabindex="-1" role="dialog" aria-labelledby="changeAdminPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeAdminPasswordModalLabel">Change Admin Password?</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to change this Admin's password?</p>
+                <code id="adminPasswordChangeQuote"></code>
+
+                <div class="form-group">
+                    <label for="adminNewPassword">Password</label>
+                    <input type="password" class="form-control" id="adminNewPassword" />
+                </div>
+                <div class="form-group">
+                    <label for="adminConfirmNewPassword">Confirm Password</label>
+                    <input type="password" class="form-control" id="adminConfirmNewPassword" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="confirmAdminPasswordChange" type="submit" class="btn btn-danger">Change Password</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="remAdminWkspcModal" tabindex="-1" role="dialog" aria-labelledby="remAdminWkspcModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -102,7 +133,6 @@
                     <div class="form-group">
                         <label for="belongedWorkspaces">Select Workspace</label>
                         <select class="form-control" id="belongedWorkspaces">
-                            
                         </select>
                     </div>
                 </form>
@@ -128,15 +158,15 @@
                 <form>
                     <div class="form-group">
                         <label for="email">Email Address</label>
-                        <input type="email" class="form-control" id="email"/>
+                        <input type="email" class="form-control" id="email" />
                     </div>
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" class="form-control" id="password"/>
+                        <input type="password" class="form-control" id="password" />
                     </div>
                     <div class="form-group">
                         <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirmPassword"/>
+                        <input type="password" class="form-control" id="confirmPassword" />
                     </div>
                 </form>
             </div>
@@ -164,7 +194,6 @@
                     <div class="form-group">
                         <label for="nonBelongedWorkspaces">Select Workspace</label>
                         <select class="form-control" id="nonBelongedWorkspaces">
-                            
                         </select>
                     </div>
                 </form>
@@ -178,5 +207,5 @@
 </div>
 
 @section Scripts{
-    <script src="~/js/ManageAdmins.js"></script>
+<script src="~/js/ManageAdmins.js"></script>
 }

@@ -53,8 +53,8 @@ namespace ACESDashboard.Controllers
         }
 
         public async Task<IActionResult> AddAdminToWorkspace(string userId, string workspaceName)
-        {            
-            if(User.FindFirst(Constants.SuperAdminClaim) is not null)
+        {
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null)
             {
                 if (string.IsNullOrWhiteSpace(workspaceName))
                 {
@@ -84,15 +84,15 @@ namespace ACESDashboard.Controllers
 
         public async Task<IActionResult> AddDocument([FromForm] IFormFile file, string fileName,
             int workspaceId, string sectionName)
-        {   
-            if(file == null || string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(sectionName))
+        {
+            if (file == null || string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(sectionName))
             {
                 return RedirectToAction("Workspace", new { id = workspaceId, returnMessage = "F Fields cannot be blank" });
             }
 
             var workspace = await _workspaceRepository.GetByIdAsync(workspaceId);
 
-            if(User.FindFirst(Constants.SuperAdminClaim) is not null 
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null
                 || User.HasClaim(x => x.Type == Constants.AdminClaim && x.Value == workspace.Guid.ToString()))
             {
                 var section = workspace.Sections.FirstOrDefault(x => x.Name == sectionName);
@@ -117,7 +117,7 @@ namespace ACESDashboard.Controllers
         }
 
         public async Task<IActionResult> AddSection(string sectionName, int workspaceId)
-        {            
+        {
 
             var workspace = await _workspaceRepository.GetByIdAsync(workspaceId);
 
@@ -146,7 +146,7 @@ namespace ACESDashboard.Controllers
         }
 
         public async Task<IActionResult> AddUpdate(string updateText, DateTime expiryTime, int workspaceId)
-        {            
+        {
             var workspace = await _workspaceRepository.GetByIdAsync(workspaceId);
 
             if (User.FindFirst(Constants.SuperAdminClaim) is not null
@@ -171,11 +171,24 @@ namespace ACESDashboard.Controllers
             return Unauthorized();
         }
 
+        public async Task<IActionResult> ChangeAdminPassword(string userId, string password, string confirmPassword)
+        {
+            if (password != confirmPassword)
+                return BadRequest("Passwords do not match");
+
+            var user = await _userManager.FindByIdAsync(userId);
+            string token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            await _userManager.ResetPasswordAsync(user, token, password);
+            return Ok();
+
+
+        }
+
         public async Task<IActionResult> CreateAdmin(string email, string password, string confirmPassword)
         {
-            if(User.FindFirst(Constants.SuperAdminClaim) is not null)
+            if (User.FindFirst(Constants.SuperAdminClaim) is not null)
             {
-                if (string.IsNullOrWhiteSpace(email) 
+                if (string.IsNullOrWhiteSpace(email)
                     || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword))
                 {
                     return BadRequest("Fields cannot be blank");
@@ -332,7 +345,7 @@ namespace ACESDashboard.Controllers
                 }
 
                 update.Text = newUpdateText;
-                update.ExpiresAt = expiryTime;               
+                update.ExpiresAt = expiryTime;
 
                 await _updateRespository.UpdateAsync(update);
                 return Ok();
@@ -385,7 +398,6 @@ namespace ACESDashboard.Controllers
         public async Task<IActionResult> Index(bool activeOnly = true)
         {
             var workspaces = await _workspaceRepository.GetAllAsync(activeOnly);
-
             return View(new IndexViewModel { Workspaces = workspaces, ActiveOnly = activeOnly });
         }
 

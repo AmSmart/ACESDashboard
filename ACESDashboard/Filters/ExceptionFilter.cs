@@ -28,11 +28,28 @@ namespace ACESDashboard.Filters
                 return;
             }
 
-            HttpResponse response = context.HttpContext.Response;
-            response.StatusCode = 500;
-            var file = File.ReadAllBytes(Path.Combine(_webHostEnvironment.WebRootPath, "error.html"));
+            HttpResponse response;
 
-            context.Result = new FileContentResult(file, "text/html");
+            if (context.HttpContext.Request.Path == "/"                
+                || context.HttpContext.Request.Path.Value.ToLower() == "/home/editworkspace"
+                || context.HttpContext.Request.Path.Value.ToLower() == "/home/index"
+                || context.HttpContext.Request.Path.Value.ToLower() == "/home/manageadmins"
+                || context.HttpContext.Request.Path.Value.ToLower() == "/home/workspace"
+                || context.HttpContext.Request.Path.Value.ToLower() == "/index")
+            {
+                response = context.HttpContext.Response;
+                response.StatusCode = 500;
+                var file = File.ReadAllBytes(Path.Combine(_webHostEnvironment.WebRootPath, "error.html"));
+
+                context.Result = new FileContentResult(file, "text/html");
+            }
+            else
+            {
+                response = context.HttpContext.Response;
+                response.StatusCode = 500;
+
+                context.Result = new BadRequestObjectResult("An unexpected error occured");
+            }            
         }
     }
 }
