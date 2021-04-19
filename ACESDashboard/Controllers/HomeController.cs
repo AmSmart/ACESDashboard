@@ -111,7 +111,7 @@ namespace ACESDashboard.Controllers
                 };
 
                 await _documentRepository.CreateAsync(document);
-                return RedirectToAction("Workspace", new { id = workspaceId, activeOnly = true });
+                return RedirectToAction("Workspace", new { id = workspaceId, activeOnly = true, returnMessage = "S Document Added!" });
             }
             return Unauthorized();
         }
